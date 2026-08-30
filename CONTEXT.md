@@ -75,7 +75,7 @@ The canonical supplied logo is [`apps/web/public/OSI.png`](apps/web/public/OSI.p
 - Use Next.js `Image` for rendered UI instances and provide explicit dimensions or a responsive size policy.
 - Keep the source file in `public/`; do not duplicate it in component directories or recreate it as inline SVG.
 
-The current scaffold's dark `globals.css` is intentionally a functional placeholder and must be brought into alignment with these tokens before visual implementation is considered complete.
+The current web implementation applies this system in `apps/web/app/globals.css`, with the supplied logo rendered through Next's `Image` component and Hugeicons used for interface icons. Keep future visual changes aligned with these tokens rather than reintroducing a dark or generic dashboard treatment.
 
 ## Current state
 
@@ -311,6 +311,7 @@ Next.js boundaries:
 - Preserve direct-link behavior for every route and provide explicit `loading.tsx`, `error.tsx`, and `not-found.tsx` states where useful.
 - Keep quiz fallback behavior in the client wrapper, but log/observe failures rather than silently hiding all API problems.
 - Use Hugeicons for every interface icon. Import `HugeiconsIcon` from `@hugeicons/react` and individual icons from the chosen Hugeicons package; never introduce Lucide or wildcard icon imports.
+- The web `dev` script uses Next.js Turbopack. This avoids intermittent Windows webpack vendor-chunk races; a stale `.next` cache may be removed safely when a previous dev process was interrupted.
 - Implement `/learn` as the academic accordion reference and keep `/about` for project context rather than conflating the two.
 - Implement the simulation as an explicit finite-state machine with `idle`, `encapsulating(layer)`, `transmitting`, `decapsulating(layer)`, and `complete` states plus a history stack.
 - Map controls to explicit actions: `PLAY`, `PAUSE`, `STEP_FORWARD`, `STEP_BACKWARD`, `RESET`, `SET_MESSAGE`, and `ANIMATION_COMPLETE`.

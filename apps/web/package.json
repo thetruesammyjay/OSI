@@ -3,10 +3,10 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint app components lib --no-warn-ignored",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests"
   },

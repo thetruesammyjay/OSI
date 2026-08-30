@@ -1,21 +1,12 @@
 "use client";
+
 import { type FormEvent, useState } from "react";
+import { ArrowRight01Icon, Message01Icon } from "@hugeicons/core-free-icons";
+import { Icon } from "@/components/icon";
 import { api } from "@/lib/api";
+
 export default function FeedbackPage() {
-  const [sent, setSent] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  async function submit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    try {
-      await api.feedback({
-        experience: String(form.get("experience") ?? ""),
-        suggestions: String(form.get("suggestions") ?? ""),
-      });
-      setSent(true);
-    } catch {
-      setError("Feedback could not be submitted. Please try again.");
-    }
-  }
-  return <main><h1>Share feedback</h1>{sent ? <p>Thank you for your feedback.</p> : <form onSubmit={submit}><label>Describe your experience<textarea name="experience" maxLength={10000} rows={5} /></label><label>Suggestions<textarea name="suggestions" maxLength={10000} rows={5} /></label>{error && <p role="alert">{error}</p>}<button type="submit">Submit feedback</button></form>}</main>;
+  const [sent, setSent] = useState(false); const [busy, setBusy] = useState(false); const [error, setError] = useState<string | null>(null);
+  async function submit(event: FormEvent<HTMLFormElement>) { event.preventDefault(); setError(null); setBusy(true); const form = new FormData(event.currentTarget); try { await api.feedback({ experience: String(form.get("experience") ?? ""), difficulties: String(form.get("difficulties") ?? ""), suggestions: String(form.get("suggestions") ?? ""), educational_value: String(form.get("educational_value") ?? "") }); setSent(true); } catch (reason) { setError(reason instanceof Error ? reason.message : "Feedback could not be submitted."); } finally { setBusy(false); } }
+  return <main className="page"><div className="section-heading"><p className="eyebrow">A short research note</p><h1>Tell us what helped.</h1><p className="lede">Your feedback helps us improve the learning experience. It is anonymous by default and stays focused on the tool.</p></div>{sent ? <div className="form-card"><span className="icon-wrap"><Icon icon={Message01Icon} size={22} /></span><h2 style={{ marginTop: 18 }}>Thank you for the careful read.</h2><p className="lede" style={{ marginTop: 12 }}>Your response has been received. You can return to the simulation whenever you are ready.</p></div> : <form className="form-card form-grid" onSubmit={submit}><div className="field"><label htmlFor="experience">What was your experience?</label><textarea id="experience" name="experience" required maxLength={10000} placeholder="What felt clear, useful, or surprising?" /></div><div className="field"><label htmlFor="difficulties">Where did you get stuck?</label><textarea id="difficulties" name="difficulties" maxLength={10000} placeholder="A control, explanation, or interaction..." /></div><div className="field"><label htmlFor="educational_value">What did you learn?</label><textarea id="educational_value" name="educational_value" maxLength={10000} placeholder="The idea that clicked for you" /></div><div className="field"><label htmlFor="suggestions">What should we improve?</label><textarea id="suggestions" name="suggestions" maxLength={10000} placeholder="One practical change would be..." /></div>{error ? <p className="form-message error" role="alert">{error}</p> : null}<button className="button button-primary" disabled={busy} type="submit">{busy ? "Sending…" : "Send feedback"} <Icon icon={ArrowRight01Icon} size={17} /></button><p className="field-help">Please do not include names, email addresses, or other personal information.</p></form>}</main>;
 }

@@ -99,7 +99,7 @@ Python is not managed by pnpm. Root scripts should delegate frontend tasks throu
 
 ## Local setup
 
-The commands below describe the target monorepo once the scaffold has been created.
+The commands below describe the current monorepo scaffold and its production workflow.
 
 1. Install JavaScript dependencies from the repository root:
 
@@ -204,7 +204,7 @@ Use `@hugeicons/core-free-icons` for the free Stroke Rounded set. If a paid styl
 
 ## Root commands
 
-The target root `package.json` should expose these commands:
+The root `package.json` exposes these commands:
 
 | Command | Purpose |
 | --- | --- |
@@ -216,6 +216,16 @@ The target root `package.json` should expose these commands:
 | `pnpm typecheck` | Run TypeScript and Python type checks |
 | `pnpm test` | Run frontend and API test suites |
 | `pnpm openapi:generate` | Regenerate the typed frontend API client |
+
+The web development script uses Next.js Turbopack for faster, more reliable Windows
+development. If a previously interrupted Next process reports a missing file under
+`apps/web/.next/server/vendor-chunks`, stop the dev server, remove only that generated
+cache, and restart:
+
+```powershell
+Remove-Item -LiteralPath .\apps\web\.next -Recurse -Force
+pnpm dev:web
+```
 
 API commands may also be run directly from `apps/api`:
 
