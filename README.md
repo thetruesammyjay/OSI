@@ -217,13 +217,13 @@ The root `package.json` exposes these commands:
 | `pnpm test` | Run frontend and API test suites |
 | `pnpm openapi:generate` | Regenerate the typed frontend API client |
 
-The web development script uses Next.js Turbopack for faster, more reliable Windows
-development. If a previously interrupted Next process reports a missing file under
-`apps/web/.next/server/vendor-chunks`, stop the dev server, remove only that generated
-cache, and restart:
+The web development script uses Next.js Turbopack and writes to `.next-dev` so development
+artifacts cannot race with a production `.next` build. If a previously interrupted Next
+process reports a missing manifest under `apps/web/.next-dev`, stop the dev server, remove
+only that generated cache, and restart:
 
 ```powershell
-Remove-Item -LiteralPath .\apps\web\.next -Recurse -Force
+Remove-Item -LiteralPath .\apps\web\.next-dev -Recurse -Force
 pnpm dev:web
 ```
 

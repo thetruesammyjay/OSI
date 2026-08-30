@@ -311,7 +311,7 @@ Next.js boundaries:
 - Preserve direct-link behavior for every route and provide explicit `loading.tsx`, `error.tsx`, and `not-found.tsx` states where useful.
 - Keep quiz fallback behavior in the client wrapper, but log/observe failures rather than silently hiding all API problems.
 - Use Hugeicons for every interface icon. Import `HugeiconsIcon` from `@hugeicons/react` and individual icons from the chosen Hugeicons package; never introduce Lucide or wildcard icon imports.
-- The web `dev` script uses Next.js Turbopack. This avoids intermittent Windows webpack vendor-chunk races; a stale `.next` cache may be removed safely when a previous dev process was interrupted.
+- The web `dev` script uses Next.js Turbopack and the `.next-dev` output directory. This avoids intermittent Windows webpack/vendor-chunk races and keeps development manifests separate from production `.next` builds; a stale `.next-dev` cache may be removed safely when a previous dev process was interrupted.
 - Implement `/learn` as the academic accordion reference and keep `/about` for project context rather than conflating the two.
 - Implement the simulation as an explicit finite-state machine with `idle`, `encapsulating(layer)`, `transmitting`, `decapsulating(layer)`, and `complete` states plus a history stack.
 - Map controls to explicit actions: `PLAY`, `PAUSE`, `STEP_FORWARD`, `STEP_BACKWARD`, `RESET`, `SET_MESSAGE`, and `ANIMATION_COMPLETE`.
