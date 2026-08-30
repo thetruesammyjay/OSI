@@ -1,0 +1,20 @@
+{
+  "name": "osi-model-platform",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@9.15.0",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "dev:web": "pnpm --filter @osi/web dev",
+    "dev:api": "uv run --project apps/api --directory apps/api uvicorn app.main:app --reload --port 8000",
+    "build": "turbo run build",
+    "lint": "turbo run lint && uv run --project apps/api ruff check apps/api/app apps/api/tests",
+    "typecheck": "turbo run typecheck && uv run --project apps/api mypy apps/api/app",
+    "test": "turbo run test && uv run --project apps/api pytest apps/api/tests",
+    "openapi:generate": "pnpm --filter @osi/api-client generate"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.6"
+  }
+}
