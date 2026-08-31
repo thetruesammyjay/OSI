@@ -391,9 +391,9 @@ pnpm build
 
 Create a Python web service rooted at `apps/api`.
 
-- Build command: `uv sync --frozen --no-dev`
+- Build command: `uv sync --active --frozen --no-dev`
 - Pre-deploy command: `uv run alembic upgrade head`
-- Start command: `uv run uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+- Start command: `uv run --active --no-dev uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 - Health check: `/api/health`
 - Readiness check: `/api/ready`
 - Required secrets: `DATABASE_URL`, `JWT_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`
