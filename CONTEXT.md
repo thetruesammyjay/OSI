@@ -58,7 +58,7 @@ The four academic objectives are:
 
 ### Layout and component direction
 
-- Navigation is a non-sticky Soft Meadow bar with the OSI logo left, links centered, and a dark/yellow CTA pair at the right.
+- Navigation is a sticky Soft Meadow bar with the OSI logo left, links centered, and a single yellow learning CTA at the right. Admin access remains a direct `/admin` route and is intentionally not promoted in the public header.
 - The homepage hero is a breathable two-column composition: academic/product headline and copy on the left; simulation/product visual on the right, with flat organic blobs behind it.
 - Use generous whitespace, three-column feature grids where appropriate, and Soft Meadow bands to separate sections.
 - Decorative blobs are flat, irregular, and layered behind product visuals only. No people illustrations or decorative 3D renders in the brand layer.
@@ -353,9 +353,10 @@ and must not persist access tokens in `sessionStorage` or localStorage.
 The current API implementation uses SQLAlchemy's psycopg driver with conservative pool settings,
 `pool_pre_ping`, and connection recycling. Alembic revision `0001_initial` is the source-controlled
 baseline; the configured Neon database has been upgraded to that revision and seeded idempotently.
-Rate limiting uses an atomic Redis fixed-window backend when `REDIS_URL` is configured. The in-memory
-implementation remains an explicit fallback for local development and transient Redis outages; use the
-Redis backend before running multiple Render workers.
+Rate limiting uses an atomic Upstash REST fixed-window backend when `UPSTASH_REDIS_REST_URL` and the
+standard (write-enabled) `UPSTASH_REDIS_REST_TOKEN` are configured. The in-memory implementation
+remains an explicit fallback for local development and transient Upstash outages; use the shared
+REST backend before running multiple Render workers.
 
 ## Seed and content migration
 
@@ -465,7 +466,7 @@ These require product or implementation confirmation before they materially affe
 
 - Whether learners will have accounts, or quiz attempts remain anonymous.
 - Whether to add a same-origin BFF in front of the existing HttpOnly cookie flow; direct cookie auth is the current implementation.
-- Whether Redis should be provisioned as a managed Render add-on or an external service; `REDIS_URL` is the stable contract.
+- Whether Redis should be provisioned as a managed Render add-on or an external service; the stable production contract is `UPSTASH_REDIS_REST_URL` plus a standard (write-enabled) `UPSTASH_REDIS_REST_TOKEN`. A legacy `REDIS_URL` remains available for TCP Redis providers.
 - Whether admin-created OSI layer content should become database-managed; currently layer content is mostly code-defined.
 - Whether API response envelopes should be standardized in a later versioned contract.
 - The canonical production domains and whether Vercel preview deployments need live API access.

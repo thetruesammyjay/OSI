@@ -2,7 +2,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 API_ROOT = Path(__file__).resolve().parents[2]
@@ -24,7 +24,11 @@ class Settings(BaseSettings):
     admin_password: str | None = None
     cors_origins: str = "http://localhost:3000"
     log_level: str = "INFO"
+    # Legacy TCP Redis URL. Keep it as a compatibility fallback while Upstash
+    # REST credentials are the preferred production configuration.
     redis_url: str | None = None
+    upstash_redis_rest_url: str | None = None
+    upstash_redis_rest_token: SecretStr | None = None
     rate_limit_backend: Literal["auto", "memory", "redis"] = "auto"
     database_pool_size: int = Field(default=5, ge=1, le=20)
     database_max_overflow: int = Field(default=5, ge=0, le=20)
@@ -52,8 +56,11 @@ class Settings(BaseSettings):
                 raise ValueError("AUTH_COOKIE_SAMESITE must be 'none' for cross-origin production")
             if self.auth_cookie_secure is False:
                 raise ValueError("AUTH_COOKIE_SECURE cannot be false in production")
-            if self.rate_limit_backend == "redis" and not self.redis_url:
-                raise ValueError("REDIS_URL must be configured when RATE_LIMIT_BACKEND=redis")
+            if self.rate_limit_backend == "redis" and not self.rate_limit_configured:
+                raise ValueError(
+                    "Configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN "
+                    "(or legacy REDIS_URL) when RATE_LIMIT_BACKEND=redis"
+                )
 
     @property
     def cors_origin_list(self) -> list[str]:
@@ -72,6 +79,13 @@ class Settings(BaseSettings):
         if self.auth_cookie_samesite is not None:
             return self.auth_cookie_samesite
         return "none" if self.environment == "production" else "lax"
+
+    @property
+    def rate_limit_configured(self) -> bool:
+        return bool(
+            self.redis_url
+            or (self.upstash_redis_rest_url and self.upstash_redis_rest_token)
+        )
 
     @property
     def sqlalchemy_database_url(self) -> str:

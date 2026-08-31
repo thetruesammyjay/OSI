@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
-  ArrowRight01Icon,
   BookOpen01Icon,
   Home01Icon,
   Menu01Icon,
@@ -42,7 +41,6 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
         <div className="nav-actions">
-          <Link className="button button-dark button-small" href="/admin" onClick={() => setOpen(false)}>Admin login <Icon icon={ArrowRight01Icon} size={16} /></Link>
           <Link className="button button-primary button-small" href="/simulation" onClick={() => setOpen(false)}>Start learning</Link>
         </div>
       </header>

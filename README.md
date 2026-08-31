@@ -172,12 +172,22 @@ ADMIN_USERNAME=admin
 ADMIN_PASSWORD=replace-with-a-strong-password
 CORS_ORIGINS=http://localhost:3000
 LOG_LEVEL=INFO
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
+# Optional legacy Redis TCP URL; ignored when the Upstash REST pair is present
 REDIS_URL=
 RATE_LIMIT_BACKEND=auto
 DATABASE_POOL_SIZE=5
 DATABASE_MAX_OVERFLOW=5
 DATABASE_POOL_RECYCLE_SECONDS=1800
 ```
+
+For Upstash, set `UPSTASH_REDIS_REST_URL` and the **standard**
+`UPSTASH_REDIS_REST_TOKEN` from the database's **REST** connection tab, then set
+`RATE_LIMIT_BACKEND=redis` in staging/production. The rate limiter needs write access for
+`INCR`, `EXPIRE`, and `EVAL`, so a read-only token will not work. The API uses Upstash's HTTP
+Python client and executes the fixed-window counter atomically with Redis `EVAL`. The legacy
+`REDIS_URL` TCP setting remains supported for non-Upstash Redis deployments.
 
 `CORS_ORIGINS` should be parsed as a comma-separated list so preview and production domains can both be allowed. Use Neon's pooled URL for normal application traffic and, if Alembic has trouble through the pooler, expose a separate `MIGRATION_DATABASE_URL` using the direct connection.
 
@@ -335,7 +345,7 @@ The seed command must be idempotent. It should insert the default admin only whe
 
 - Hash passwords with Argon2 (preferred) or bcrypt; never store plaintext passwords.
 - Return short, generic errors for invalid credentials.
-- Keep login and feedback rate limiting. The API uses an atomic Redis fixed-window limiter when `REDIS_URL` is configured, with a bounded in-memory fallback for local development or Redis outages. Configure Redis before running multiple Render workers.
+- Keep login and feedback rate limiting. The API uses an atomic Upstash REST fixed-window limiter when `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are configured, with a bounded in-memory fallback for local development or Redis outages. Configure the shared backend before running multiple Render workers.
 - Validate JWT issuer, expiry, algorithm, and subject on every protected request.
 - Use an `HttpOnly`, `Secure`, `SameSite=None` access cookie for the cross-origin Vercel/Render deployment and a non-HttpOnly CSRF cookie paired with the `X-CSRF-Token` header on admin mutations.
 - Restrict CORS to the explicit Vercel production domain and expected preview/local origins.
@@ -388,7 +398,7 @@ Create a Python web service rooted at `apps/api`.
 - Readiness check: `/api/ready`
 - Required secrets: `DATABASE_URL`, `JWT_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`
 - Required setting: `CORS_ORIGINS=https://your-project.vercel.app`
-- Configure `REDIS_URL` and set `RATE_LIMIT_BACKEND=redis` before scaling beyond one Render worker.
+- Configure `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, and set `RATE_LIMIT_BACKEND=redis` before scaling beyond one Render worker.
 - Set `ENVIRONMENT=production` to enable production startup validation and disable interactive API docs.
 - Use an explicit `MIGRATION_DATABASE_URL` when the Neon pooler is incompatible with migration tooling.
 

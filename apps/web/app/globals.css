@@ -18,7 +18,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 h1, h2, h3, h4 { font-family: var(--serif); font-weight: 400; letter-spacing: -0.01em; line-height: 1.08; margin: 0; }
 h1 { font-size: clamp(2.65rem, 6vw, 4.4rem); } h2 { font-size: clamp(2rem, 4vw, 3rem); } h3 { font-size: 1.5rem; }
 p { margin: 0; }
-.site-nav { align-items: center; background: var(--soft-meadow); display: flex; gap: 28px; min-height: 76px; padding: 14px max(24px, calc((100vw - var(--page-max)) / 2)); position: relative; z-index: 10; }
+.site-nav { align-items: center; background: var(--soft-meadow); display: flex; gap: 28px; min-height: 76px; padding: 14px max(24px, calc((100vw - var(--page-max)) / 2)); position: sticky; top: 0; z-index: 10; }
 .brand { align-items: center; display: inline-flex; flex-shrink: 0; } .brand img { display: block; height: auto; width: 106px; }
 .nav-links { align-items: center; display: flex; gap: 22px; margin: 0 auto; }
 .nav-link { color: var(--deep-ink); font-size: .9rem; font-weight: 600; transition: opacity .2s ease; } .nav-link:hover { opacity: .62; } .nav-link[data-active="true"] { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 5px; }

@@ -7,6 +7,7 @@ from pydantic import ValidationError
 from starlette.requests import Request
 
 from app.api import deps
+from app.core import rate_limit
 from app.core.config import Settings
 from app.core.rate_limit import InMemoryRateLimiter
 from app.core.security import set_auth_cookies
@@ -55,6 +56,56 @@ def test_rate_limiter_enforces_window_limit() -> None:
     limiter.reset("client")
     assert limiter.allow("client")
     assert limiter.allow("other-client")
+
+
+def test_settings_accept_upstash_rest_credentials() -> None:
+    settings = Settings(
+        _env_file=None,
+        environment="production",
+        database_url="postgresql://user:password@example.test/db",
+        jwt_secret="x" * 32,
+        admin_password="a" * 16,
+        cors_origins="https://osi.example.com",
+        auth_cookie_samesite="none",
+        auth_cookie_secure=True,
+        upstash_redis_rest_url="https://example-upstash.upstash.io",
+        upstash_redis_rest_token="secret-token",
+        rate_limit_backend="redis",
+    )
+    settings.validate_for_runtime()
+    assert settings.rate_limit_configured
+    assert settings.upstash_redis_rest_token is not None
+    assert settings.upstash_redis_rest_token.get_secret_value() == "secret-token"
+
+
+def test_upstash_rate_limiter_uses_atomic_eval(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[tuple[str, list[str], list[str]]] = []
+
+    class FakeUpstashClient:
+        def __init__(self, **kwargs: object) -> None:
+            assert kwargs["url"] == "https://example-upstash.upstash.io"
+            assert kwargs["token"] == "secret-token"
+
+        def eval(self, script: str, *, keys: list[str], args: list[str]) -> int:
+            calls.append((script, keys, args))
+            return 1
+
+        def delete(self, key: str) -> int:
+            assert key.startswith("osi:rate-limit:")
+            return 1
+
+    monkeypatch.setattr(rate_limit, "UpstashRedis", FakeUpstashClient)
+    limiter = rate_limit.UpstashRateLimiter(
+        "https://example-upstash.upstash.io", "secret-token", limit=5, window_seconds=60
+    )
+
+    assert limiter.allow("client")
+    limiter.reset("client")
+    assert len(calls) == 1
+    script, keys, args = calls[0]
+    assert "INCR" in script and "EXPIRE" in script
+    assert keys == ["osi:rate-limit:5:60:client"]
+    assert args == ["60"]
 
 
 def test_server_scores_submitted_answers() -> None:
