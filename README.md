@@ -397,7 +397,7 @@ Create a Python web service rooted at `apps/api`.
 - Health check: `/api/health`
 - Readiness check: `/api/ready`
 - Required secrets: `DATABASE_URL`, `JWT_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`
-- Required setting: `CORS_ORIGINS=https://your-project.vercel.app`
+- Required setting: `CORS_ORIGINS=https://osi-web.vercel.app`
 - Configure `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, and set `RATE_LIMIT_BACKEND=redis` before scaling beyond one Render worker.
 - Set `ENVIRONMENT=production` to enable production startup validation and disable interactive API docs.
 - Use an explicit `MIGRATION_DATABASE_URL` when the Neon pooler is incompatible with migration tooling.
@@ -409,11 +409,17 @@ Do not rely on Render's local disk for durable data. Neon is the system of recor
 Import the same repository and set the root directory to `apps/web` (or use the repository's monorepo-aware Vercel configuration).
 
 - Framework preset: Next.js
-- Environment variable: `NEXT_PUBLIC_API_URL=https://your-api.onrender.com/api`
+- Environment variable: `NEXT_PUBLIC_API_URL=https://osi-api.onrender.com/api`
 - Deploy production from the main branch.
 - Add preview domains to API CORS only when previews need live API access.
 
-After both services deploy, verify the health endpoint, login, FAQ/quiz reads, an admin write, and a complete PDU simulation from the Vercel domain.
+### Live deployment
+
+- Web application: [https://osi-web.vercel.app](https://osi-web.vercel.app)
+- API liveness: [https://osi-api.onrender.com/api/health](https://osi-api.onrender.com/api/health)
+- API readiness: [https://osi-api.onrender.com/api/ready](https://osi-api.onrender.com/api/ready)
+
+After both services deploy, verify the health and readiness endpoints, login, FAQ/quiz reads, an admin write, and a complete PDU simulation from the Vercel domain.
 
 ## Migration plan
 
