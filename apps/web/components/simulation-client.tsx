@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useReducer, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
@@ -22,6 +23,10 @@ type State = Snapshot & { playing: boolean; history: Snapshot[] };
 type Action = { type: "PLAY" | "PAUSE" | "STEP_FORWARD" | "STEP_BACKWARD" | "RESET" | "TICK" };
 
 const initial: State = { phase: "idle", step: 0, playing: false, history: [] };
+const SimulationScene = dynamic(() => import("@/components/simulation-scene"), {
+  ssr: false,
+  loading: () => <div className="sim3d-loading-shell">Loading the interactive 3D simulation…</div>,
+});
 
 function advance(state: State, playing: boolean): State {
   const nextHistory = [...state.history, { phase: state.phase, step: state.step }];
@@ -65,6 +70,7 @@ function activeLayer(state: State, receiver = false): number | null {
 export default function SimulationClient() {
   const [state, dispatch] = useReducer(reducer, initial);
   const [message, setMessage] = useState("Hello OSI");
+  const [sentMessage, setSentMessage] = useState<string | null>(null);
   const [payload, setPayload] = useState<Record<string, unknown> | null>(null);
   const [selected, setSelected] = useState<number | null>(7);
   const [layerDetails, setLayerDetails] = useState<LayerInfo | null>(null);
@@ -88,21 +94,29 @@ export default function SimulationClient() {
   const status = useMemo(() => {
     if (state.phase === "idle") return "Ready to send";
     if (state.phase === "complete") return "Message recovered at the receiver";
+    if (state.phase === "decapsulating" && decapsulationOrder[state.step] === 6) {
+      return state.playing
+        ? "Decrypting illustrative protected data at Presentation"
+        : "Paused at Presentation decryption";
+    }
     if (!state.playing) return "Paused for inspection";
     return {
       encapsulating: "Adding context on the sender",
       transmitting: "Crossing the network medium",
       decapsulating: "Removing context at the receiver",
     }[state.phase];
-  }, [state.phase, state.playing]);
+  }, [state.phase, state.playing, state.step]);
 
   async function sendMessage(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
-    if (!message.trim()) return;
+    const trimmedMessage = message.trim();
+    if (!trimmedMessage) return;
     try {
-      const result = await api.encapsulate(message.trim());
+      const result = await api.encapsulate(trimmedMessage);
       setPayload(result.data);
+      setSentMessage(trimmedMessage);
+      setMessage(trimmedMessage);
       dispatch({ type: "RESET" });
       dispatch({ type: "PLAY" });
     } catch {
@@ -115,6 +129,50 @@ export default function SimulationClient() {
   const envelope = payload?.layers as
     | Array<{ layerNumber: number; layerName: string; dataUnit: string; headers: { protocol: string }; trailer?: unknown }>
     | undefined;
+  const activeStepLayer = senderActive ?? receiverActive;
+  const activeStepContent = layerContent.find((layer) => layer.number === activeStepLayer);
+  const activeEnvelopeLayer = envelope?.find((layer) => layer.layerNumber === activeStepLayer);
+  const displayedMessage = sentMessage ?? message.trim();
+  const receiverStep = state.phase === "decapsulating";
+  const stepHeading = state.phase === "transmitting"
+    ? "Network medium"
+    : state.phase === "complete"
+      ? "Message delivered to the receiving application"
+      : activeStepContent
+        ? `${receiverStep ? "Receiver" : "Sender"} · Layer ${activeStepContent.number} · ${activeStepContent.name}${receiverStep && activeStepContent.number === 6 ? " · Decryption" : ""}`
+        : "Ready to begin at the sender";
+  const stepAction = state.phase === "transmitting"
+    ? "The Layer 2 frame has been encoded as bits. Those signals cross the network medium and arrive at the receiver's Physical layer."
+    : state.phase === "complete"
+      ? "The receiver has removed the simulated layer information and decrypted the illustrative protected data. The original message is now available to the receiving application."
+      : activeStepContent
+        ? receiverStep ? activeStepContent.receiverAction : activeStepContent.senderAction
+        : "Enter a message and select Send message. The journey begins at the sender's Application layer.";
+  const stepData = state.phase === "transmitting"
+    ? "Bits representing the complete frame are crossing the medium. The frame carries the protected application data and its layer context."
+    : state.phase === "complete"
+      ? `Recovered original message: “${displayedMessage}”`
+      : activeStepContent
+        ? receiverStep
+          ? activeStepContent.number === 7
+            ? `Recovered application data: “${displayedMessage}”`
+            : activeStepContent.number === 6
+              ? `[Illustrative encrypted content] → decrypted original message: “${displayedMessage}”`
+              : activeStepContent.number === 1
+                ? "Received signal reconstructed as bits and passed upward as a frame."
+                : activeStepContent.number === 2
+                  ? "Received frame: the link header and simulated error-checking trailer are being checked and removed."
+                  : `Illustrative encrypted application data with the Layer ${activeStepContent.number} information being removed.`
+          : activeStepContent.number === 7
+            ? `Readable application data: “${displayedMessage}”`
+            : activeStepContent.number === 6
+              ? `Readable application data: “${displayedMessage}” → [illustrative encrypted content].`
+              : activeStepContent.number === 1
+                ? "Bits encode the complete frame, including its Data Link error-checking trailer."
+                : activeStepContent.number === 2
+                  ? "The packet is wrapped in a frame with link addressing and an error-checking trailer."
+                  : `Illustrative encrypted application data carried inside the Layer ${activeStepContent.number} ${activeStepContent.pdu.toLowerCase()}.`
+        : `Message to send: “${displayedMessage}”`;
 
   return (
     <section aria-labelledby="simulation-title">
@@ -125,7 +183,7 @@ export default function SimulationClient() {
           <p className="lede">Enter a message, then watch each layer add and remove its own context across a sender, a medium, and a receiver.</p>
         </div>
         <div className="sim-controls" aria-label="Simulation controls">
-          <button className={`icon-button${state.playing ? " active" : ""}`} type="button" onClick={() => dispatch({ type: "PLAY" })} aria-label="Play simulation" aria-pressed={state.playing}>
+          <button className={`icon-button${state.playing ? " active" : ""}`} type="button" onClick={() => dispatch({ type: "PLAY" })} aria-label="Play simulation" aria-pressed={state.playing} disabled={!payload && state.phase === "idle"}>
             <Icon icon={PlayCircleIcon} size={21} />
           </button>
           <button className="icon-button" type="button" onClick={() => dispatch({ type: "PAUSE" })} aria-label="Pause simulation" disabled={!state.playing}>
@@ -134,7 +192,7 @@ export default function SimulationClient() {
           <button className="icon-button" type="button" onClick={() => dispatch({ type: "STEP_BACKWARD" })} aria-label="Step backward" disabled={state.history.length === 0}>
             <Icon icon={ArrowLeft01Icon} size={19} />
           </button>
-          <button className="icon-button" type="button" onClick={() => dispatch({ type: "STEP_FORWARD" })} aria-label="Step forward" disabled={state.phase === "complete"}>
+          <button className="icon-button" type="button" onClick={() => dispatch({ type: "STEP_FORWARD" })} aria-label="Step forward" disabled={state.phase === "complete" || (!payload && state.phase === "idle")}>
             <Icon icon={ArrowRight01Icon} size={19} />
           </button>
           <button className="icon-button" type="button" onClick={() => dispatch({ type: "RESET" })} aria-label="Reset simulation">
@@ -149,7 +207,15 @@ export default function SimulationClient() {
       </form>
       {error ? <p className="form-message error" role="alert">{error}</p> : null}
 
-      <div className="sim-board" aria-live="polite">
+      <SimulationScene
+        phase={state.phase}
+        senderLayer={senderActive}
+        receiverLayer={receiverActive}
+        selectedLayer={selected}
+        onSelectLayer={setSelected}
+      />
+
+      <div className="sim-board">
         <div className="host-panel">
           <div className="host-title"><span className="host-icon"><Icon icon={ComputerIcon} size={20} /></span><strong>Sender host</strong></div>
           <div className="layer-stack">
@@ -170,6 +236,28 @@ export default function SimulationClient() {
           </div>
         </div>
       </div>
+
+      <section className="sim-step-card" aria-live="polite" aria-atomic="true" aria-label="Current simulation step">
+        <div className="sim-step-heading">
+          <div>
+            <p className="eyebrow">What is happening now</p>
+            <h2>{stepHeading}</h2>
+          </div>
+          {activeStepContent ? <span className="tag">PDU: {activeStepContent.pdu}</span> : null}
+        </div>
+        <div className="sim-step-grid">
+          <div>
+            <span className="info-label">Layer activity</span>
+            <p>{stepAction}</p>
+            {activeEnvelopeLayer && activeStepContent ? <p className="sim-step-meta">Illustrative protocol context: {activeStepContent.protocols[0]}</p> : null}
+            {activeStepContent?.number === 2 ? <p className="sim-step-meta">Data Link trailer: {receiverStep ? "The simulated FCS/CRC trailer is checked and removed." : "A simulated FCS/CRC trailer is added to the frame."}</p> : null}
+          </div>
+          <div>
+            <span className="info-label">Data at this step</span>
+            <p className="sim-data-preview">{stepData}</p>
+          </div>
+        </div>
+      </section>
 
       <div className="inspector">
         <div className="section-heading-row"><div className="section-heading"><p className="eyebrow">Layer inspector</p><h3>{layerDetails?.name ?? selectedFallback?.name ?? "Choose a layer"}</h3></div>{selectedFallback ? <span className="tag">Layer {selectedFallback.number} · PDU: {layerDetails?.dataUnit ?? selectedFallback.pdu}</span> : null}</div>
