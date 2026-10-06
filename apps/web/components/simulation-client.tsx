@@ -63,7 +63,7 @@ function reducer(state: State, action: Action): State {
 }
 
 function activeLayer(state: State, receiver = false): number | null {
-  if (state.phase === "encapsulating") return encapsulationOrder[state.step] ?? null;
+  if (state.phase === "encapsulating" && !receiver) return encapsulationOrder[state.step] ?? null;
   if (state.phase === "decapsulating" && receiver) return decapsulationOrder[state.step] ?? null;
   return null;
 }
