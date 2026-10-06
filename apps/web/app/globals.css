@@ -79,7 +79,7 @@ p { margin: 0; }
 .sim3d-layer-button { align-items: center; background: rgba(249,251,242,.94); border: 1px solid rgba(19,14,48,.22); border-radius: var(--radius-pill); color: var(--deep-ink); display: flex; font-size: 10px; font-weight: 600; gap: 5px; justify-content: center; padding: 4px 7px; transition: transform 140ms ease-out, background-color 140ms ease-out; white-space: nowrap; }
 .sim3d-layer-button:active { transform: scale(.97); }
 .sim3d-layer-button[data-active="true"] { background: var(--hi-yellow); border-color: var(--deep-ink); }
-.sim3d-layer-button[data-selected="true"]:not([data-active="true"]) { background: var(--deep-ink); color: var(--canvas); }
+.sim3d-layer-button[data-selected="true"]:not([data-active="true"]) { outline: 1px dashed var(--slate); outline-offset: 2px; }
 .sim3d-loading, .sim3d-fallback { background: rgba(249,251,242,.94); border-radius: 14px; color: var(--deep-ink); font-size: .85rem; padding: 12px 16px; }
 .sim3d-fallback { align-items: center; display: flex; inset: 0; justify-content: center; position: absolute; text-align: center; }
 .host-title { align-items: center; display: flex; gap: 10px; margin-bottom: 16px; } .host-title .host-icon { align-items: center; background: var(--hi-yellow); border-radius: 50%; display: inline-flex; height: 34px; justify-content: center; width: 34px; } .host-title strong { font-family: var(--serif); font-size: 1.45rem; font-weight: 400; }

@@ -6,7 +6,7 @@ import { Html, OrbitControls, RoundedBox, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { layerContent } from "@/lib/content";
 
-type Phase = "idle" | "encapsulating" | "transmitting" | "decapsulating" | "complete";
+type Phase = "idle" | "encapsulating" | "transmitting" | "receiving" | "decapsulating" | "complete";
 
 type SimulationSceneProps = {
   phase: Phase;
@@ -82,7 +82,7 @@ function LayerStack({
               }}
             >
               <meshStandardMaterial
-                color={isActive ? "#ffe228" : isSelected ? "#130e30" : "#dce3d5"}
+                color={isActive ? "#ffe228" : "#dce3d5"}
                 emissive={isActive ? "#ffe228" : "#000000"}
                 emissiveIntensity={isActive ? 0.22 : 0}
                 roughness={0.68}
@@ -123,7 +123,7 @@ function DataPacket({
   const target = useMemo(() => {
     if (phase === "transmitting") return new THREE.Vector3(0, -1.48, 0.2);
     if (phase === "complete") return new THREE.Vector3(stackOffset, layerY(7), 0.2);
-    if (phase === "decapsulating") {
+    if (phase === "receiving" || phase === "decapsulating") {
       return new THREE.Vector3(stackOffset, layerY(receiverLayer ?? 1), 0.2);
     }
     return new THREE.Vector3(-stackOffset, layerY(senderLayer ?? 7), 0.2);

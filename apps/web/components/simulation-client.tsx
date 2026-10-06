@@ -17,7 +17,7 @@ import { layerContent } from "@/lib/content";
 
 const encapsulationOrder = [7, 6, 5, 4, 3, 2, 1];
 const decapsulationOrder = [1, 2, 3, 4, 5, 6, 7];
-type Phase = "idle" | "encapsulating" | "transmitting" | "decapsulating" | "complete";
+type Phase = "idle" | "encapsulating" | "transmitting" | "receiving" | "decapsulating" | "complete";
 type Snapshot = { phase: Phase; step: number };
 type State = Snapshot & { playing: boolean; history: Snapshot[] };
 type Action = { type: "PLAY" | "PAUSE" | "STEP_FORWARD" | "STEP_BACKWARD" | "RESET" | "TICK" };
@@ -35,7 +35,8 @@ function advance(state: State, playing: boolean): State {
     return { ...state, step: state.step + 1, playing, history: nextHistory };
   }
   if (state.phase === "encapsulating") return { phase: "transmitting", step: 0, playing, history: nextHistory };
-  if (state.phase === "transmitting") return { phase: "decapsulating", step: 0, playing, history: nextHistory };
+  if (state.phase === "transmitting") return { phase: "receiving", step: 0, playing, history: nextHistory };
+  if (state.phase === "receiving") return { phase: "decapsulating", step: 0, playing, history: nextHistory };
   if (state.phase === "decapsulating" && state.step < decapsulationOrder.length - 1) {
     return { ...state, step: state.step + 1, playing, history: nextHistory };
   }
@@ -103,6 +104,7 @@ export default function SimulationClient() {
     return {
       encapsulating: "Adding context on the sender",
       transmitting: "Crossing the network medium",
+      receiving: "Data delivered to the receiver",
       decapsulating: "Removing context at the receiver",
     }[state.phase];
   }, [state.phase, state.playing, state.step]);
@@ -136,6 +138,8 @@ export default function SimulationClient() {
   const receiverStep = state.phase === "decapsulating";
   const stepHeading = state.phase === "transmitting"
     ? "Network medium"
+    : state.phase === "receiving"
+      ? "Data arriving at receiver"
     : state.phase === "complete"
       ? "Message delivered to the receiving application"
       : activeStepContent
@@ -143,6 +147,8 @@ export default function SimulationClient() {
         : "Ready to begin at the sender";
   const stepAction = state.phase === "transmitting"
     ? "The Layer 2 frame has been encoded as bits. Those signals cross the network medium and arrive at the receiver's Physical layer."
+    : state.phase === "receiving"
+      ? "The packet has reached the receiver's network interface. The receiver's layer-by-layer processing starts next."
     : state.phase === "complete"
       ? "The receiver has removed the simulated layer information and decrypted the illustrative protected data. The original message is now available to the receiving application."
       : activeStepContent
@@ -150,6 +156,8 @@ export default function SimulationClient() {
         : "Enter a message and select Send message. The journey begins at the sender's Application layer.";
   const stepData = state.phase === "transmitting"
     ? "Bits representing the complete frame are crossing the medium. The frame carries the protected application data and its layer context."
+    : state.phase === "receiving"
+      ? "The arriving signals have reached the receiver. The received frame is ready for layer processing."
     : state.phase === "complete"
       ? `Recovered original message: “${displayedMessage}”`
       : activeStepContent
@@ -221,7 +229,7 @@ export default function SimulationClient() {
           <div className="layer-stack">
             {encapsulationOrder.map((number) => {
               const layer = layerContent.find((item) => item.number === number)!;
-              return <button className={`layer-button${senderActive === number || selected === number ? " selected" : ""}`} type="button" key={number} onClick={() => setSelected(number)}><span>Layer {number} · {layer.name}</span><span>{layer.pdu}</span></button>;
+              return <button className={`layer-button${senderActive === number ? " selected" : ""}`} type="button" key={number} onClick={() => setSelected(number)}><span>Layer {number} · {layer.name}</span><span>{layer.pdu}</span></button>;
             })}
           </div>
         </div>
